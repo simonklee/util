@@ -3,12 +3,12 @@ package log
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"io"
+	"path/filepath"
 	"strconv"
 	"sync/atomic"
-	"path/filepath"
 
 	"github.com/simonz05/util/raven"
 )
@@ -22,11 +22,10 @@ const (
 )
 
 var (
-	std *log.Logger
-	sev Level 
+	std      *log.Logger
+	sev      Level
 	filename *string
 	ravenDSN *string
-	
 )
 
 func init() {
