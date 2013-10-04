@@ -16,9 +16,9 @@ import (
 type severity int32
 
 const (
-	LevelInfo Level = iota
+	LevelFatal Level = iota
 	LevelError
-	LevelFatal
+	LevelInfo 
 )
 
 var (
@@ -125,7 +125,7 @@ func (l *Level) Set(value string) error {
 // Print calls Output to print to the standard logger.
 // Arguments are handled in the manner of fmt.Print.
 func Print(v ...interface{}) {
-	if sev.get() >= LevelInfo {
+	if sev >= LevelInfo {
 		std.Output(2, fmt.Sprint(v...))
 	}
 }
@@ -133,7 +133,7 @@ func Print(v ...interface{}) {
 // Printf calls Output to print to the standard logger.
 // Arguments are handled in the manner of fmt.Printf.
 func Printf(format string, v ...interface{}) {
-	if sev.get() >= LevelInfo {
+	if sev >= LevelInfo {
 		std.Output(2, fmt.Sprintf(format, v...))
 	}
 }
@@ -141,14 +141,14 @@ func Printf(format string, v ...interface{}) {
 // Println calls Output to print to the standard logger.
 // Arguments are handled in the manner of fmt.Println.
 func Println(v ...interface{}) {
-	if sev.get() >= LevelInfo {
+	if sev >= LevelInfo {
 		std.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 // Fatal is equivalent to Print() followed by a call to os.Exit(1).
 func Error(v ...interface{}) {
-	if sev.get() >= LevelError {
+	if sev >= LevelError {
 		std.Output(2, fmt.Sprint(v...))
 		os.Exit(1)
 	}
@@ -156,7 +156,7 @@ func Error(v ...interface{}) {
 
 // Fatalf is equivalent to Printf() followed by a call to os.Exit(1).
 func Errorf(format string, v ...interface{}) {
-	if sev.get() >= LevelError {
+	if sev >= LevelError {
 		std.Output(2, fmt.Sprintf(format, v...))
 		os.Exit(1)
 	}
@@ -164,7 +164,7 @@ func Errorf(format string, v ...interface{}) {
 
 // Fatalln is equivalent to Println() followed by a call to os.Exit(1).
 func Errorln(v ...interface{}) {
-	if sev.get() >= LevelError {
+	if sev >= LevelError {
 		std.Output(2, fmt.Sprintln(v...))
 		os.Exit(1)
 	}
@@ -172,7 +172,7 @@ func Errorln(v ...interface{}) {
 
 // Fatal is equivalent to Print() followed by a call to os.Exit(1).
 func Fatal(v ...interface{}) {
-	if sev.get() >= LevelFatal {
+	if sev >= LevelFatal {
 		std.Output(2, fmt.Sprint(v...))
 		os.Exit(1)
 	}
@@ -180,7 +180,7 @@ func Fatal(v ...interface{}) {
 
 // Fatalf is equivalent to Printf() followed by a call to os.Exit(1).
 func Fatalf(format string, v ...interface{}) {
-	if sev.get() >= LevelFatal {
+	if sev >= LevelFatal {
 		std.Output(2, fmt.Sprintf(format, v...))
 		os.Exit(1)
 	}
@@ -188,7 +188,7 @@ func Fatalf(format string, v ...interface{}) {
 
 // Fatalln is equivalent to Println() followed by a call to os.Exit(1).
 func Fatalln(v ...interface{}) {
-	if sev.get() >= LevelFatal {
+	if sev >= LevelFatal {
 		std.Output(2, fmt.Sprintln(v...))
 		os.Exit(1)
 	}
