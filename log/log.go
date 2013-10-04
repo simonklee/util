@@ -22,26 +22,35 @@ const (
 )
 
 var (
-	std      *log.Logger
+	std      *logger
 	sev      Level
 	filename *string
 	ravenDSN *string
 )
 
 func init() {
-	flag.Var(&sev, "log.v", "log level")
-	filename = flag.String("log.file", "", "If non-empty, write log to this file")
-	ravenDSN = flag.String("log.raven-dsn", "", "If non-empty, write to raven dsn")
-	InitLogger()
+	flag.Var(&sev, "log", "log level")
+	filename = flag.String("log-file", "", "If non-empty, write log to this file")
+	ravenDSN = flag.String("log-raven-dsn", "", "If non-empty, write to raven dsn")
+	std = new(logger)
 }
 
-func InitLogger() {
-	std = log.New(createWriter(), "", log.Ldate|log.Lmicroseconds)
+type logger struct {
+	l *log.Logger
+}
+
+func (l *logger) Output(calldepth int, s string) error {
+	if l.l == nil {
+		l.l = log.New(createWriter(), "", log.Ldate|log.Lmicroseconds)
+	}
+
+	return l.l.Output(calldepth, s)
 }
 
 func createWriter() io.Writer {
 	var writers []io.Writer
 	writers = append(writers, os.Stderr)
+
 	if *filename != "" {
 		if f, err := createFile(); err != nil {
 			os.Stderr.Write([]byte(err.Error()))
@@ -65,7 +74,6 @@ func createWriter() io.Writer {
 
 func createFile() (f *os.File, err error) {
 	fname := filepath.Clean(*filename)
-	println(fname)
 	return os.Create(fname)
 }
 
@@ -125,7 +133,6 @@ func Print(v ...interface{}) {
 // Printf calls Output to print to the standard logger.
 // Arguments are handled in the manner of fmt.Printf.
 func Printf(format string, v ...interface{}) {
-	println(*filename)
 	if sev.get() >= LevelInfo {
 		std.Output(2, fmt.Sprintf(format, v...))
 	}
