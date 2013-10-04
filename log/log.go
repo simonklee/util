@@ -18,11 +18,11 @@ type severity int32
 const (
 	LevelFatal Level = iota
 	LevelError
-	LevelInfo 
+	LevelInfo
 )
 
 var (
-	std      *logger
+	std      logger
 	sev      Level
 	filename *string
 	ravenDSN *string
@@ -32,49 +32,118 @@ func init() {
 	flag.Var(&sev, "log", "log level")
 	filename = flag.String("log-file", "", "If non-empty, write log to this file")
 	ravenDSN = flag.String("log-raven-dsn", "", "If non-empty, write to raven dsn")
-	std = new(logger)
+	std = new(multiLogger)
 }
 
-type logger struct {
-	l *log.Logger
+type logger interface {
+	Output(calldepth int, s string, sev Level) error
 }
 
-func (l *logger) Output(calldepth int, s string) error {
+type multiLogger struct {
+	loggers []logger
+}
+
+func (l multiLogger) Output(calldepth int, s string, sev Level) (err error) {
+	if len(l.loggers) == 0 {
+		l.init()
+	}
+
+	for _, w := range l.loggers {
+		err = w.Output(calldepth, s, sev)
+
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func (l *multiLogger) init() {
+	l.loggers = append(l.loggers, &consoleLogger{sev: sev})
+
+	if *filename != "" {
+		l.loggers = append(l.loggers, &fileLogger{fname: *filename, sev: sev})
+	}
+
+	if *ravenDSN != "" {
+		l.loggers = append(l.loggers, &ravenLogger{dsn: *ravenDSN, sev: LevelError})
+	}
+}
+
+type consoleLogger struct {
+	l   *log.Logger
+	sev Level
+}
+
+func (l *consoleLogger) Output(calldepth int, s string, sev Level) error {
+	if l.sev < sev {
+		return nil
+	}
+
 	if l.l == nil {
-		l.l = log.New(createWriter(), "", log.Ldate|log.Lmicroseconds)
+		l.l = log.New(os.Stderr, "", log.Ldate|log.Lmicroseconds)
 	}
 
 	return l.l.Output(calldepth, s)
 }
 
-func createWriter() io.Writer {
-	var writers []io.Writer
-	writers = append(writers, os.Stderr)
-
-	if *filename != "" {
-		if f, err := createFile(); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(1)
-		} else {
-			writers = append(writers, f)
-		}
-	}
-
-	if *ravenDSN != "" {
-		if r, err := raven.NewClient(*ravenDSN, ""); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(1)
-		} else {
-			writers = append(writers, &ravenWriter{c: r})
-		}
-	}
-
-	return io.MultiWriter(writers...)
+type fileLogger struct {
+	l     *log.Logger
+	sev   Level
+	fname string
 }
 
-func createFile() (f *os.File, err error) {
-	fname := filepath.Clean(*filename)
-	return os.Create(fname)
+func (l *fileLogger) Output(calldepth int, s string, sev Level) error {
+	if l.sev < sev {
+		return nil
+	}
+
+	if l.l == nil {
+		l.init()
+	}
+
+	return l.l.Output(calldepth, s)
+}
+
+func (l *fileLogger) init() {
+	f, err := os.Create(filepath.Clean(l.fname))
+
+	if err != nil {
+		os.Stderr.Write([]byte(err.Error()))
+		os.Exit(1)
+	}
+
+	l.l = log.New(f, "", log.Ldate|log.Lmicroseconds)
+}
+
+type ravenLogger struct {
+	l   *log.Logger
+	sev Level
+	dsn string
+}
+
+func (l *ravenLogger) Output(calldepth int, s string, sev Level) error {
+	if l.sev < sev {
+		return nil
+	}
+
+	if l.l == nil {
+		l.init()
+	}
+
+	return l.l.Output(calldepth, s)
+}
+
+func (l *ravenLogger) init() {
+	r, err := raven.NewClient(l.dsn, "")
+
+	if err != nil {
+		os.Stderr.Write([]byte(err.Error()))
+		os.Exit(1)
+	}
+
+	l.l = log.New(&ravenWriter{c: r}, "", 0)
 }
 
 type ravenWriter struct {
@@ -83,6 +152,12 @@ type ravenWriter struct {
 
 func (w *ravenWriter) Write(p []byte) (int, error) {
 	return len(p), w.c.Error(string(p))
+}
+
+func createWriter() io.Writer {
+	var writers []io.Writer
+
+	return io.MultiWriter(writers...)
 }
 
 // Level is treated as a sync/atomic int32.
@@ -126,7 +201,7 @@ func (l *Level) Set(value string) error {
 // Arguments are handled in the manner of fmt.Print.
 func Print(v ...interface{}) {
 	if sev >= LevelInfo {
-		std.Output(2, fmt.Sprint(v...))
+		std.Output(2, fmt.Sprint(v...), LevelInfo)
 	}
 }
 
@@ -134,7 +209,7 @@ func Print(v ...interface{}) {
 // Arguments are handled in the manner of fmt.Printf.
 func Printf(format string, v ...interface{}) {
 	if sev >= LevelInfo {
-		std.Output(2, fmt.Sprintf(format, v...))
+		std.Output(2, fmt.Sprintf(format, v...), LevelInfo)
 	}
 }
 
@@ -142,38 +217,35 @@ func Printf(format string, v ...interface{}) {
 // Arguments are handled in the manner of fmt.Println.
 func Println(v ...interface{}) {
 	if sev >= LevelInfo {
-		std.Output(2, fmt.Sprintln(v...))
+		std.Output(2, fmt.Sprintln(v...), LevelInfo)
 	}
 }
 
 // Fatal is equivalent to Print() followed by a call to os.Exit(1).
 func Error(v ...interface{}) {
 	if sev >= LevelError {
-		std.Output(2, fmt.Sprint(v...))
-		os.Exit(1)
+		std.Output(2, fmt.Sprint(v...), LevelError)
 	}
 }
 
 // Fatalf is equivalent to Printf() followed by a call to os.Exit(1).
 func Errorf(format string, v ...interface{}) {
 	if sev >= LevelError {
-		std.Output(2, fmt.Sprintf(format, v...))
-		os.Exit(1)
+		std.Output(2, fmt.Sprintf(format, v...), LevelError)
 	}
 }
 
 // Fatalln is equivalent to Println() followed by a call to os.Exit(1).
 func Errorln(v ...interface{}) {
 	if sev >= LevelError {
-		std.Output(2, fmt.Sprintln(v...))
-		os.Exit(1)
+		std.Output(2, fmt.Sprintln(v...), LevelError)
 	}
 }
 
 // Fatal is equivalent to Print() followed by a call to os.Exit(1).
 func Fatal(v ...interface{}) {
 	if sev >= LevelFatal {
-		std.Output(2, fmt.Sprint(v...))
+		std.Output(2, fmt.Sprint(v...), LevelFatal)
 		os.Exit(1)
 	}
 }
@@ -181,7 +253,7 @@ func Fatal(v ...interface{}) {
 // Fatalf is equivalent to Printf() followed by a call to os.Exit(1).
 func Fatalf(format string, v ...interface{}) {
 	if sev >= LevelFatal {
-		std.Output(2, fmt.Sprintf(format, v...))
+		std.Output(2, fmt.Sprintf(format, v...), LevelFatal)
 		os.Exit(1)
 	}
 }
@@ -189,7 +261,7 @@ func Fatalf(format string, v ...interface{}) {
 // Fatalln is equivalent to Println() followed by a call to os.Exit(1).
 func Fatalln(v ...interface{}) {
 	if sev >= LevelFatal {
-		std.Output(2, fmt.Sprintln(v...))
+		std.Output(2, fmt.Sprintln(v...), LevelFatal)
 		os.Exit(1)
 	}
 }
