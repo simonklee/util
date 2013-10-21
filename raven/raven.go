@@ -147,6 +147,10 @@ func NewClient(dsn string, logger string) (self *Client, err error) {
 
 	basePath := path.Dir(u.Path)
 	project := path.Base(u.Path)
+	if u.User == nil {
+		return nil, errors.New(fmt.Sprintf("raven: DSN parse ERR. Missing `user` part in DSN %s", dsn))
+	}
+
 	publicKey := u.User.Username()
 	secretKey, _ := u.User.Password()
 	u.Path = basePath
