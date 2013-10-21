@@ -107,7 +107,7 @@ func (l *fileLogger) Output(calldepth int, s string, sev Level) error {
 }
 
 func (l *fileLogger) init() {
-	f, err := os.OpenFile(filepath.Clean(l.fname), os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filepath.Clean(l.fname), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
