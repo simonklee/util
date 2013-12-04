@@ -9,10 +9,34 @@ import (
 
 type Assert struct {
 	*testing.T
+	name string
 }
 
 func NewAssert(t *testing.T) *Assert {
-	return &Assert{t}
+	return &Assert{T: t}
+}
+
+func NewAssertWithName(t *testing.T, name string) *Assert {
+	return &Assert{t, name}
+}
+
+func (ast *Assert) Log(args ...interface{}) {
+	if ast.name != "" {
+		args = append(args, 0)
+		copy(args[1:], args[0:])
+		args[0] = ast.name + ":"
+		ast.T.Log(args...)
+	} else {
+		ast.T.Log(args...)
+	}
+}
+
+func (ast *Assert) Logf(format string, args ...interface{}) {
+	if ast.name != "" {
+		ast.T.Logf(ast.name+": "+format, args...)
+	} else {
+		ast.T.Logf(format, args...)
+	}
 }
 
 func (ast *Assert) Nil(value interface{}, logs ...interface{}) {
