@@ -1,4 +1,4 @@
-package cache
+package kvstore
 
 import (
 	"net/url"
@@ -9,7 +9,7 @@ import (
 	"github.com/simonz05/util/log"
 )
 
-type Cache struct {
+type KVStore struct {
 	cfg  *config
 	Pool *redis.Pool
 }
@@ -40,7 +40,7 @@ func parseDSN(dsn string) (*config, error) {
 	db := u.Path
 
 	if len(db) > 1 && db[0] == '/' {
-		db = db[1:len(db)]
+		db = db[1:]
 	}
 
 	idb, err := strconv.ParseUint(db, 10, 8)
@@ -54,48 +54,48 @@ func parseDSN(dsn string) (*config, error) {
 	return cfg, nil
 }
 
-func Open(dataSourceName string) (*Cache, error) {
+func Open(dataSourceName string) (*KVStore, error) {
 	var err error
 
-	cache := new(Cache)
-	cache.cfg, err = parseDSN(dataSourceName)
+	kvstore := new(KVStore)
+	kvstore.cfg, err = parseDSN(dataSourceName)
 
 	if err != nil {
 		return nil, err
 	}
 
-	cache.Pool = &redis.Pool{
+	kvstore.Pool = &redis.Pool{
 		MaxIdle:     128,
 		IdleTimeout: 60 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			return cache.dial()
+			return kvstore.dial()
 		},
 		TestOnBorrow: nil,
 	}
-	return cache, nil
+	return kvstore, nil
 }
 
-func (cache *Cache) Get() redis.Conn {
-	return cache.Pool.Get()
+func (kvstore *KVStore) Get() redis.Conn {
+	return kvstore.Pool.Get()
 }
 
-func (cache *Cache) dial() (redis.Conn, error) {
-	conn, err := redis.Dial("tcp", cache.cfg.addr)
+func (kvstore *KVStore) dial() (redis.Conn, error) {
+	conn, err := redis.Dial("tcp", kvstore.cfg.addr)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if cache.cfg.password != "" {
-		if _, err := conn.Do("AUTH", cache.cfg.password); err != nil {
+	if kvstore.cfg.password != "" {
+		if _, err := conn.Do("AUTH", kvstore.cfg.password); err != nil {
 			log.Errorf("Redis AUTH err: %v", err)
 			conn.Close()
 			return nil, err
 		}
 	}
 
-	if cache.cfg.db != 0 {
-		if _, err := conn.Do("SELECT", cache.cfg.db); err != nil {
+	if kvstore.cfg.db != 0 {
+		if _, err := conn.Do("SELECT", kvstore.cfg.db); err != nil {
 			log.Errorf("Redis SELECT err: %v", err)
 			conn.Close()
 			return nil, err
