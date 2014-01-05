@@ -70,7 +70,10 @@ func Open(dataSourceName string) (*KVStore, error) {
 		Dial: func() (redis.Conn, error) {
 			return kvstore.dial()
 		},
-		TestOnBorrow: nil,
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
 	}
 	return kvstore, nil
 }
