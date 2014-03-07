@@ -1,0 +1,56 @@
+{{define "content"}}
+<h1>Keys</h1>
+
+<form method="">
+    <label for="region">Region</label>
+    <select name="region" onchange="selectRegion(this)">
+        {{range $k, $v := .Regions}}
+        <option value="{{$k}}" {{if $v.Selected}}selected{{end}}>{{$v.Name}}</option>
+        {{end}}
+    </select>
+</form>
+
+<form method="POST"><button type="submit">Create New Key</button></form>
+
+<ul>
+{{range .Keys}}
+<li>{{.ID}} - {{.Created.Format "2 Jan, 2006 at 15:04"}} -
+    <a href="" onclick="return deleteKey('{{.ID}}');">Delete</a>
+</li>
+{{end}}
+</ul>
+
+<script>
+
+function selectRegion(obj){
+    var selected = obj.options[obj.selectedIndex];
+    var jxhr = $.ajax({
+        url: "/select-region/",
+        data: {region: selected.value},
+        method: "POST",
+    });
+
+    jxhr.done(function() {
+        window.location.href = "/"; 
+    });
+}
+
+function deleteKey(key){
+    if (!confirm('Are you sure you want to delete?')) {
+        console.log('fail');
+        return false;
+    }
+
+    var jxhr = $.ajax({
+        url: "/" + key + "/",
+        method: "DELETE",
+    });
+
+    jxhr.done(function() {
+        window.location.href = "/"; 
+    });
+
+    return false;
+}
+</script>
+{{end}}

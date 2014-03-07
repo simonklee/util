@@ -1,0 +1,8 @@
+{{define "content"}}
+<h1>Your new key</h1>
+<dl>
+    <dt><strong>Key:</strong></dt><dd><code>{{.Key.ID}}</code></dd>
+    <dt><strong>Created:</strong></dt><dd><code>{{.Key.Created.Format "2 Jan, 2006 at 15:04"}}</code></dd>
+</dl>
+<a href="/">Go to Index</a>
+{{end}}

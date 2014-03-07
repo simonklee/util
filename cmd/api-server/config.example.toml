@@ -1,0 +1,11 @@
+laddr=":8080"
+
+[regions]
+    [regions.dev]
+    name="Dev"
+    RedisDSN="redis://:@localhost:6379/5"
+
+    [regions.local]
+    name="Local"
+    RedisDSN="redis://:@localhost:6379/5"
+    Selected=true
