@@ -19,7 +19,7 @@ import (
 
 type Cleanup func() error
 
-func sigTrapCloser(l net.Listener, cleanups ...Cleanup) {
+func TrapCloser(l net.Listener, cleanups ...Cleanup) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGHUP)
 
