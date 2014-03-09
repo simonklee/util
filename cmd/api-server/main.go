@@ -12,9 +12,9 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
-	"github.com/simonz05/util/session"
 	"github.com/simonz05/util/kvstore"
 	"github.com/simonz05/util/log"
+	"github.com/simonz05/util/session"
 )
 
 var (
@@ -44,7 +44,7 @@ type Region struct {
 }
 
 var (
-	config   Config
+	config Config
 )
 
 func usage() {

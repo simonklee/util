@@ -16,8 +16,8 @@ import (
 
 	"git.tideland.biz/goas/monitoring"
 	"github.com/gorilla/context"
-	"github.com/simonz05/util/session"
 	"github.com/simonz05/util/log"
+	"github.com/simonz05/util/session"
 )
 
 // Creates a stack of HTTP handlers. Each HTTP handler is responsible for

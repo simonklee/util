@@ -1,10 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
-	"encoding/json"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/simonz05/util/kvstore"
@@ -15,7 +15,7 @@ type RedisBackend struct {
 	region        string
 	apiIndex      string
 	sessionPrefix string
-	db          *kvstore.KVStore
+	db            *kvstore.KVStore
 }
 
 func NewRedisBackend(db *kvstore.KVStore, region string) *RedisBackend {
@@ -24,7 +24,7 @@ func NewRedisBackend(db *kvstore.KVStore, region string) *RedisBackend {
 		region:        region,
 		apiIndex:      fmt.Sprintf("%s:api-token", region),
 		sessionPrefix: fmt.Sprintf("%s:session", region),
-		db:          db,
+		db:            db,
 	}
 }
 
