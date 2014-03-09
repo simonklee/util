@@ -41,6 +41,7 @@ const maxList = 1000
 type Client struct {
 	*Auth
 	HTTPClient *http.Client // or nil for default client
+	DefaultACL string
 }
 
 type Bucket struct {
@@ -119,6 +120,9 @@ func (c *Client) PutObject(name, bucket string, md5 hash.Hash, size int64, body 
 		encoder.Write(md5.Sum(nil))
 		encoder.Close()
 		req.Header.Set("Content-MD5", b64.String())
+	}
+	if c.DefaultACL != "" {
+		req.Header.Set("x-amz-acl", c.DefaultACL)
 	}
 	c.Auth.SignRequest(req)
 	req.Body = ioutil.NopCloser(body)
