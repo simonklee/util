@@ -187,8 +187,10 @@ func ServeJSONError(rw http.ResponseWriter, err interface{}) {
 	msg := fmt.Sprint(err)
 	log.Printf("Sending error %v to client for: %v", code, msg)
 	ReturnJSONCode(rw, code, map[string]interface{}{
-		"error":     msg,
-		"errorType": http.StatusText(code),
+		"Error": map[string]string{
+			"Message": msg,
+			"Type":    http.StatusText(code),
+		},
 	})
 }
 
