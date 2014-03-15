@@ -216,7 +216,7 @@ func (c *Client) Get(bucket, key string) (body io.ReadCloser, size int64, err er
 		return
 	}
 	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Amazon HTTP error on GET: %d", res.StatusCode)
+		err = fmt.Errorf("Amazon HTTP error on GET: %d - %s", res.StatusCode, key)
 		return
 	}
 	return res.Body, res.ContentLength, nil
@@ -238,5 +238,5 @@ func (c *Client) Delete(bucket, key string) error {
 		res.StatusCode == http.StatusOK {
 		return nil
 	}
-	return fmt.Errorf("Amazon HTTP error on DELETE: %d", res.StatusCode)
+	return fmt.Errorf("Amazon HTTP error on DELETE: %d - %s", res.StatusCode, key)
 }
