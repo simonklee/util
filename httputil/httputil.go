@@ -23,10 +23,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/simonz05/util/log"
 )
 
 // IsGet reports whether r.Method is a GET or HEAD request.
