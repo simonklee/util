@@ -1,22 +1,14 @@
+// Copyright 2014 Simon Zimmermann. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
+// pkg log implements a logger.
 package log
 
 import (
 	"flag"
 	"fmt"
-	"io"
-	"log"
 	"os"
-	"path/filepath"
-	"strconv"
-	"sync/atomic"
-
-	"github.com/simonz05/util/raven"
-)
-
-const (
-	LevelFatal Level = iota
-	LevelError
-	LevelInfo
 )
 
 var (
@@ -68,132 +60,6 @@ func (l *multiLogger) init() {
 	if *ravenDSN != "" {
 		l.loggers = append(l.loggers, &ravenLogger{dsn: *ravenDSN, sev: LevelError})
 	}
-}
-
-type consoleLogger struct {
-	l   *log.Logger
-	sev Level
-}
-
-func (l *consoleLogger) Output(calldepth int, s string, sev Level) error {
-	if l.sev < sev {
-		return nil
-	}
-
-	if l.l == nil {
-		l.l = log.New(os.Stderr, "", log.Ldate|log.Lmicroseconds)
-	}
-
-	return l.l.Output(calldepth, s)
-}
-
-type fileLogger struct {
-	l     *log.Logger
-	sev   Level
-	fname string
-}
-
-func (l *fileLogger) Output(calldepth int, s string, sev Level) error {
-	if l.sev < sev {
-		return nil
-	}
-
-	if l.l == nil {
-		l.init()
-	}
-
-	return l.l.Output(calldepth, s)
-}
-
-func (l *fileLogger) init() {
-	f, err := os.OpenFile(filepath.Clean(l.fname), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-
-	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
-		os.Exit(1)
-	}
-
-	l.l = log.New(f, "", log.Ldate|log.Lmicroseconds)
-}
-
-type ravenLogger struct {
-	l   *log.Logger
-	sev Level
-	dsn string
-}
-
-func (l *ravenLogger) Output(calldepth int, s string, sev Level) error {
-	if l.sev < sev {
-		return nil
-	}
-
-	if l.l == nil {
-		l.init()
-	}
-
-	return l.l.Output(calldepth, s)
-}
-
-func (l *ravenLogger) init() {
-	r, err := raven.NewClient(l.dsn, "")
-
-	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
-		os.Exit(1)
-	}
-
-	l.l = log.New(&ravenWriter{c: r}, "", log.Lshortfile)
-}
-
-type ravenWriter struct {
-	c *raven.Client
-}
-
-func (w *ravenWriter) Write(p []byte) (int, error) {
-	return len(p), w.c.Error(string(p))
-}
-
-func createWriter() io.Writer {
-	var writers []io.Writer
-
-	return io.MultiWriter(writers...)
-}
-
-// Level is treated as a sync/atomic int32.
-
-// Level specifies a level of verbosity for V logs. *Level implements
-// flag.Value; the -v flag is of type Level and should be modified
-// only through the flag.Value interface.
-type Level int32
-
-// get returns the value of the Level.
-func (l *Level) get() Level {
-	return Level(atomic.LoadInt32((*int32)(l)))
-}
-
-// set sets the value of the Level.
-func (l *Level) set(val Level) {
-	atomic.StoreInt32((*int32)(l), int32(val))
-}
-
-// String is part of the flag.Value interface.
-func (l *Level) String() string {
-	return strconv.FormatInt(int64(*l), 10)
-}
-
-// Get is part of the flag.Value interface.
-func (l *Level) Get() interface{} {
-	return *l
-}
-
-// Set is part of the flag.Value interface.
-func (l *Level) Set(value string) error {
-	v, err := strconv.Atoi(value)
-	if err != nil {
-		return err
-	}
-	l.set(Level(v))
-	return nil
 }
 
 // Print calls Output to print to the standard logger.
