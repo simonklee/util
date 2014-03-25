@@ -5,8 +5,9 @@
 package pat
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // Creates a stack of HTTP handlers. Each HTTP handler is responsible for
