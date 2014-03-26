@@ -72,7 +72,7 @@ func (c *Client) Buckets() ([]*Bucket, error) {
 		return nil, err
 	}
 	defer httputil.CloseBody(res.Body)
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("s3: Unexpected status code %d fetching bucket list", res.StatusCode)
 	}
 	return parseListAllMyBuckets(res.Body)
@@ -103,10 +103,13 @@ func (c *Client) Stat(name, bucket string) (size int64, reterr error) {
 	if res.Body != nil {
 		defer res.Body.Close()
 	}
-	if res.StatusCode == http.StatusNotFound {
+	switch res.StatusCode {
+	case http.StatusNotFound:
 		return 0, os.ErrNotExist
+	case http.StatusOK:
+		return strconv.ParseInt(res.Header.Get("Content-Length"), 10, 64)
 	}
-	return strconv.ParseInt(res.Header.Get("Content-Length"), 10, 64)
+	return 0, fmt.Errorf("s3: Unexpected status code %d statting object %v", res.StatusCode, name)
 }
 
 func (c *Client) PutObject(name, bucket string, md5 hash.Hash, size int64, body io.Reader) error {
@@ -133,7 +136,7 @@ func (c *Client) PutObject(name, bucket string, md5 hash.Hash, size int64, body 
 	if err != nil {
 		return err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		res.Write(os.Stderr)
 		return fmt.Errorf("Got response code %d from s3", res.StatusCode)
 	}
