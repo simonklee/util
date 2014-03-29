@@ -26,10 +26,12 @@ import (
 	"hash"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/simonz05/util/httputil"
 )
@@ -72,7 +74,7 @@ func (c *Client) Buckets() ([]*Bucket, error) {
 		return nil, err
 	}
 	defer httputil.CloseBody(res.Body)
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("s3: Unexpected status code %d fetching bucket list", res.StatusCode)
 	}
 	return parseListAllMyBuckets(res.Body)
@@ -103,10 +105,13 @@ func (c *Client) Stat(name, bucket string) (size int64, reterr error) {
 	if res.Body != nil {
 		defer res.Body.Close()
 	}
-	if res.StatusCode == http.StatusNotFound {
+	switch res.StatusCode {
+	case http.StatusNotFound:
 		return 0, os.ErrNotExist
+	case http.StatusOK:
+		return strconv.ParseInt(res.Header.Get("Content-Length"), 10, 64)
 	}
-	return strconv.ParseInt(res.Header.Get("Content-Length"), 10, 64)
+	return 0, fmt.Errorf("s3: Unexpected status code %d statting object %v", res.StatusCode, name)
 }
 
 func (c *Client) PutObject(name, bucket string, md5 hash.Hash, size int64, body io.Reader) error {
@@ -133,7 +138,7 @@ func (c *Client) PutObject(name, bucket string, md5 hash.Hash, size int64, body 
 	if err != nil {
 		return err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		res.Write(os.Stderr)
 		return fmt.Errorf("Got response code %d from s3", res.StatusCode)
 	}
@@ -148,6 +153,9 @@ type Item struct {
 type listBucketResults struct {
 	Contents    []*Item
 	IsTruncated bool
+	MaxKeys     int
+	Name        string // bucket name
+	Marker      string
 }
 
 // ListBucket returns 0 to maxKeys (inclusive) items from the provided
@@ -166,18 +174,47 @@ func (c *Client) ListBucket(bucket string, startAt string, maxKeys int) (items [
 			fetchN = maxList
 		}
 		var bres listBucketResults
+
 		url_ := fmt.Sprintf("http://%s.%s/?marker=%s&max-keys=%d",
 			bucket, c.hostname(), url.QueryEscape(marker), fetchN)
-		req := newReq(url_)
-		c.Auth.SignRequest(req)
-		res, err := c.httpClient().Do(req)
-		if err != nil {
-			return nil, err
-		}
-		err = xml.NewDecoder(res.Body).Decode(&bres)
-		httputil.CloseBody(res.Body)
-		if err != nil {
-			return nil, err
+
+		// Try the enumerate three times, since Amazon likes to close
+		// https connections a lot, and Go sucks at dealing with it:
+		// https://code.google.com/p/go/issues/detail?id=3514
+		const maxTries = 5
+		for try := 1; try <= maxTries; try++ {
+			time.Sleep(time.Duration(try-1) * 100 * time.Millisecond)
+			req := newReq(url_)
+			c.Auth.SignRequest(req)
+			res, err := c.httpClient().Do(req)
+			if err != nil {
+				if try < maxTries {
+					continue
+				}
+				return nil, err
+			}
+			if res.StatusCode != 200 {
+				err = fmt.Errorf("s3.enumerate: status code %v", res.StatusCode)
+			} else {
+				bres = listBucketResults{}
+				var logbuf bytes.Buffer
+				err = xml.NewDecoder(io.TeeReader(res.Body, &logbuf)).Decode(&bres)
+				if err != nil {
+					log.Printf("Error parsing s3 XML response: %v for %q", err, logbuf.Bytes())
+				} else if bres.MaxKeys != fetchN || bres.Name != bucket || bres.Marker != marker {
+					err = fmt.Errorf("Unexpected parse from server: %#v from: %s", bres, logbuf.Bytes())
+					log.Print(err)
+				}
+			}
+			httputil.CloseBody(res.Body)
+			if err != nil {
+				if try < maxTries-1 {
+					continue
+				}
+				log.Print(err)
+				return nil, err
+			}
+			break
 		}
 		for _, it := range bres.Contents {
 			if it.Key == marker && it.Key != startAt {
