@@ -44,11 +44,12 @@ func LogHandler(h http.Handler) http.Handler {
 // DebugHandle
 func DebugHandle(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req, err := httputil.DumpRequest(r, true)
+		data, err := httputil.DumpRequest(r, true)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		log.Print(data)
 		h.ServeHTTP(w, r)
 	})
 }
