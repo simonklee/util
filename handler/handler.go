@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-	//"net/http/httptest"
+	"net/http/httputil"
 
 	"git.tideland.biz/goas/monitoring"
 	"github.com/gorilla/context"
@@ -44,7 +44,11 @@ func LogHandler(h http.Handler) http.Handler {
 // DebugHandle
 func DebugHandle(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("DEBUG Calling: %s %s", r.Method, r.URL.Path)
+		req, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		h.ServeHTTP(w, r)
 	})
 }
