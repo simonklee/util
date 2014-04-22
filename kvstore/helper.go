@@ -16,29 +16,67 @@ func Ints(reply interface{}, err error) ([]int, error) {
 	}
 	switch reply := reply.(type) {
 	case []interface{}:
-		result := make([]int, len(reply))
-		for i := range reply {
-			if reply[i] == nil {
+		result := make([]int, 0, len(reply))
+		n := 0
+		for _, v := range reply {
+			if v == nil {
 				continue
 			}
-			p, ok := reply[i].([]byte)
+			p, ok := v.([]byte)
 			if !ok {
-				return nil, fmt.Errorf("kvstore: unexpected element type for Ints, got type %T", reply[i])
+				return nil, fmt.Errorf("kvstore: unexpected element type for Ints, got type %T", v)
 			}
 
-			n, err := strconv.ParseInt(string(p), 10, 0)
+			nr, err := strconv.ParseInt(string(p), 10, 0)
 
 			if err != nil {
 				return nil, err
 			}
 
-			result[i] = int(n)
+			n++
+			result = append(result, int(nr))
 		}
-		return result, nil
+		return result[:n], nil
 	case nil:
 		return nil, redis.ErrNil
 	case redis.Error:
 		return nil, reply
 	}
 	return nil, fmt.Errorf("kvstore: unexpected type for Ints, got type %T", reply)
+}
+
+// Bytes is a helper that converts a multi-bulk command reply to a [][]byte.
+// If err is not equal to nil, then Ints returns nil, err.  If one if the
+// multi-bulk items is not a bulk value or nil, then Ints returns an error.
+func Bytes(reply interface{}, err error) ([][]byte, error) {
+	if err != nil {
+		return nil, err
+	}
+	switch reply := reply.(type) {
+	case []interface{}:
+		result := make([][]byte, 0, len(reply))
+		n := 0
+		for _, v := range reply {
+			var b []byte
+			switch raw := v.(type) {
+			case []byte:
+				b = raw
+			case string:
+				b = []byte(raw)
+			case nil:
+				continue
+			default:
+				return nil, fmt.Errorf("kvstore: unexpected type for Bytes, got type %T", v)
+			}
+
+			n++
+			result = append(result, b)
+		}
+		return result[:n], nil
+	case nil:
+		return nil, redis.ErrNil
+	case redis.Error:
+		return nil, reply
+	}
+	return nil, fmt.Errorf("kvstore: unexpected type for Bytes, got type %T", reply)
 }
