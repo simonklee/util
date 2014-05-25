@@ -11,8 +11,8 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"time"
 	"net/http/httputil"
+	"time"
 
 	"git.tideland.biz/goas/monitoring"
 	"github.com/gorilla/context"
@@ -97,14 +97,14 @@ type authHandler struct {
 
 func (a *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := a.loadSession(r); err != nil {
-		log.Error(err)
+		log.Error("handler error: ", err)
 
 		if a.mustAuth {
+			log.Println("Status Unauthorized")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 	}
-
 	a.handler.ServeHTTP(w, r)
 	//rec := httptest.NewRecorder()
 	//a.handler.ServeHTTP(rec, r)
@@ -144,14 +144,14 @@ func (a *authHandler) loadSession(r *http.Request) error {
 
 // NewAuthSessionHandler creates a AuthSessionHandler for the specified
 // backend. It loads a session from a session key.
-func NewAuthSessionHandler(sessionStorage session.Storage) func(http.Handler) http.Handler {
+func NewAuthSessionHandler(sessionStorage session.Storage, must bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return &authHandler{
 			handler:    h,
 			backend:    sessionStorage,
 			contextKey: sessionKey,
 			headerKey:  SessionHeader,
-			mustAuth:   false,
+			mustAuth:   must,
 		}
 	}
 }
