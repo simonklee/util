@@ -16,7 +16,7 @@ const (
 type Session struct {
 	Id        string `json:"-"`
 	Mask      uint8  `json:"m,omitempty"`
-	ProfileID int    `json:"u,omitempty"`
+	ProfileID int    `json:"user_id,omitempty"`
 }
 
 func (p *Session) HasAdmin() bool {
