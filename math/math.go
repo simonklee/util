@@ -1,29 +1,35 @@
 package math
 
-func IntMin(a, b int) int {
-	if a < b {
-		return a
+// pkg math implements some common util functions
+
+// IntMin returns the smaller of x or y.
+func IntMin(x, y int) int {
+	if x < y {
+		return x
 	}
-	return b
+	return y
 }
 
-func IntMax(a, b int) int {
-	if a < b {
-		return b
+// IntMax returns the larger of x or y.
+func IntMax(x, y int) int {
+	if x < y {
+		return y
 	}
-	return a
+	return x
 }
 
-func UintMin(a, b uint) uint {
-	if a < b {
-		return a
+// UintMin returns the smaller of x or y.
+func UintMin(x, y uint) uint {
+	if x < y {
+		return x
 	}
-	return b
+	return y
 }
 
-func UintMax(a, b uint) uint {
-	if a < b {
-		return b
+// UintMax returns the larger of x or y.
+func UintMax(x, y uint) uint {
+	if x < y {
+		return y
 	}
-	return a
+	return x
 }
