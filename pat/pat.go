@@ -35,6 +35,11 @@ func Get(r *mux.Router, pat string, h http.Handler, middleware ...func(http.Hand
 	return registerPat(r, "GET", pat, h, middleware)
 }
 
+// Head registers a pattern with a handler for HEAD requests.
+func Head(r *mux.Router, pat string, h http.Handler, middleware ...func(http.Handler) http.Handler) *mux.Route {
+	return registerPat(r, "HEAD", pat, h, middleware)
+}
+
 // Post registers a pattern with a handler for POST requests.
 func Post(r *mux.Router, pat string, h http.Handler, middleware ...func(http.Handler) http.Handler) *mux.Route {
 	return registerPat(r, "POST", pat, h, middleware)
