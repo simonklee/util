@@ -82,6 +82,10 @@ func (kvstore *KVStore) Get() redis.Conn {
 	return kvstore.Pool.Get()
 }
 
+func (kvstore *KVStore) Close() error {
+	return kvstore.Pool.Close()
+}
+
 func (kvstore *KVStore) dial() (redis.Conn, error) {
 	conn, err := redis.Dial("tcp", kvstore.cfg.addr)
 
