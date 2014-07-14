@@ -195,6 +195,22 @@ func ServeJSONError(rw http.ResponseWriter, err interface{}) {
 	})
 }
 
+// ServeJSONCodeError sends a JSON error response to rw for the provided
+// error value.
+func ServeJSONCodeError(rw http.ResponseWriter, err interface{}, code int) {
+	if i, ok := err.(httpCoder); ok {
+		code = i.HTTPCode()
+	}
+	msg := fmt.Sprint(err)
+	log.Printf("Sending error %v to client for: %v", code, msg)
+	ReturnJSONCode(rw, code, map[string]interface{}{
+		"Error": map[string]string{
+			"Message": msg,
+			"Type":    http.StatusText(code),
+		},
+	})
+}
+
 // TODO: use a sync.Pool if/when Go 1.3 includes it and Camlistore depends on that.
 var freeBuf = make(chan *bytes.Buffer, 2)
 
