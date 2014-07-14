@@ -75,6 +75,20 @@ func RecoveryHandler(h http.Handler) http.Handler {
 	})
 }
 
+// LogHandler adds logging to http requests
+func NewCORSHandler(domains ...string) func(h http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// TODO: compare origin header to a list of accepted domains
+			// instead of sending all OK domains.
+			for _, domain := range domains {
+				w.Header().Add("Access-Control-Allow-Origin", domain)
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
 type contextKey int
 
 const (
