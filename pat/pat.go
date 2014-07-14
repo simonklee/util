@@ -40,6 +40,11 @@ func Head(r *mux.Router, pat string, h http.Handler, middleware ...func(http.Han
 	return registerPat(r, "HEAD", pat, h, middleware)
 }
 
+// Options registers a pattern with a handler for OPTIONS requests.
+func Options(r *mux.Router, pat string, h http.Handler, middleware ...func(http.Handler) http.Handler) *mux.Route {
+	return registerPat(r, "OPTIONS", pat, h, middleware)
+}
+
 // Post registers a pattern with a handler for POST requests.
 func Post(r *mux.Router, pat string, h http.Handler, middleware ...func(http.Handler) http.Handler) *mux.Route {
 	return registerPat(r, "POST", pat, h, middleware)
