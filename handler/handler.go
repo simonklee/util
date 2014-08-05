@@ -14,10 +14,10 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"git.tideland.biz/goas/monitoring"
 	"github.com/gorilla/context"
 	"github.com/simonz05/util/log"
 	"github.com/simonz05/util/session"
+	"github.com/tideland/goas/v2/monitoring"
 )
 
 // Creates a stack of HTTP handlers. Each HTTP handler is responsible for
