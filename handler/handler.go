@@ -135,15 +135,16 @@ func (a *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Tries to load a session from the auth backend for the given authentication
 func (a *authHandler) loadSession(r *http.Request) error {
 	value := r.Header[a.headerKey]
+	var id string
 
-	if len(value) == 0 {
-		return fmt.Errorf("Header %s was empty", a.headerKey)
+	if len(value) > 0 {
+		id = value[0]
+	} else {
+		id = r.URL.Query().Get("session")
 	}
 
-	id := value[0]
-
 	if id == "" {
-		return fmt.Errorf("Header %s was empty", a.headerKey)
+		return fmt.Errorf("Header %s and session was empty", a.headerKey)
 	}
 
 	ses, err := a.backend.Read(id)
