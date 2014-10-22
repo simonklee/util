@@ -68,15 +68,19 @@ func ReturnJSON(rw http.ResponseWriter, data interface{}) {
 
 func ReturnJSONCode(rw http.ResponseWriter, code int, data interface{}) {
 	rw.Header().Set("Content-Type", "application/json")
-	js, err := json.Marshal(data)
-	if err != nil {
-		BadRequestError(rw, fmt.Sprintf("JSON serialization error: %v", err))
-		return
+	if data == nil {
+		rw.WriteHeader(code)
+	} else {
+		js, err := json.Marshal(data)
+		if err != nil {
+			BadRequestError(rw, fmt.Sprintf("JSON serialization error: %v", err))
+			return
+		}
+		rw.Header().Set("Content-Length", strconv.Itoa(len(js)+1))
+		rw.WriteHeader(code)
+		rw.Write(js)
+		rw.Write([]byte("\n"))
 	}
-	rw.Header().Set("Content-Length", strconv.Itoa(len(js)+1))
-	rw.WriteHeader(code)
-	rw.Write(js)
-	rw.Write([]byte("\n"))
 }
 
 // PrefixHandler wraps another Handler and verifies that all requests'
