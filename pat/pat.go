@@ -22,7 +22,7 @@ func use(handler http.Handler, middleware ...func(http.Handler) http.Handler) ht
 
 // registerPat a pattern with a handler for the given request method.
 func registerPat(r *mux.Router, meth, pat string, h http.Handler, middleware []func(http.Handler) http.Handler) *mux.Route {
-	return r.NewRoute().PathPrefix(pat).Handler(use(h, middleware...)).Methods(meth)
+	return r.NewRoute().Path(pat).Handler(use(h, middleware...)).Methods(meth)
 }
 
 // Delete registers a pattern with a handler for DELETE requests.
