@@ -111,7 +111,7 @@ type authHandler struct {
 
 func (a *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := a.loadSession(r); err != nil {
-		log.Error("handler error: ", err)
+		log.Printf("handler error: ", err)
 
 		if a.mustAuth {
 			log.Println("Status Unauthorized")
