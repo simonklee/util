@@ -114,3 +114,17 @@ func TestPersistance(t *testing.T) {
 	ast.Nil(err)
 	ast.Equal("{}", string(buf))
 }
+
+func BenchmarkPersistance(b *testing.B) {
+	p1 := &Session{}
+	p1.Set(AdminMask)
+	p1.ProfileID = 1
+
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(p1)
+
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

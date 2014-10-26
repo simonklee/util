@@ -3,6 +3,7 @@ package session
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/simonz05/util/kvstore"
@@ -17,6 +18,10 @@ type Session struct {
 	Id        string `json:"-"`
 	Mask      uint8  `json:"m,omitempty"`
 	ProfileID int    `json:"user_id,omitempty"`
+}
+
+type sessionString struct {
+	ProfileID string `json:"user_id,omitempty"`
 }
 
 func (p *Session) HasAdmin() bool {
@@ -91,7 +96,20 @@ func (rs *redisBackend) Read(id string) (*Session, error) {
 	s := new(Session)
 
 	if err = json.Unmarshal(data, s); err != nil {
-		return nil, err
+		// try to read profileID as string
+		ss := new(sessionString)
+
+		if err = json.Unmarshal(data, ss); err != nil {
+			return nil, err
+		}
+
+		profileID, err := strconv.Atoi(ss.ProfileID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		s.ProfileID = profileID
 	}
 
 	s.Id = id
