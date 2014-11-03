@@ -31,13 +31,13 @@ type Group struct {
 func (g *Group) Go(fn func() error) {
 	g.wg.Add(1)
 	go func() {
-		defer g.wg.Done()
 		err := fn()
 		if err != nil {
 			g.mu.Lock()
-			defer g.mu.Unlock()
 			g.errs = append(g.errs, err)
+			g.mu.Unlock()
 		}
+		g.wg.Done()
 	}()
 }
 
