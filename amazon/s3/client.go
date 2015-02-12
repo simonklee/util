@@ -27,9 +27,11 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -128,6 +130,11 @@ func (c *Client) PutObject(name, bucket string, md5 hash.Hash, size int64, body 
 	if c.DefaultACL != "" {
 		req.Header.Set("x-amz-acl", c.DefaultACL)
 	}
+	contentType := mime.TypeByExtension(path.Ext(name))
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	req.Header.Set("Content-Type", contentType)
 	c.Auth.SignRequest(req)
 	req.Body = ioutil.NopCloser(body)
 
