@@ -52,7 +52,7 @@ func DebugHandle(h http.Handler) http.Handler {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		log.Print(string(data))
+		log.Debug(string(data))
 		h.ServeHTTP(w, r)
 	})
 }
