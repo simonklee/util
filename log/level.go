@@ -52,3 +52,18 @@ func (l *Level) Set(value string) error {
 	l.set(Level(v))
 	return nil
 }
+
+func (l *Level) SetString(value string) error {
+	switch value {
+	case "fatal":
+		return l.Set("0")
+	case "error":
+		return l.Set("1")
+	case "info":
+		return l.Set("2")
+	case "debug":
+		return l.Set("3")
+	default:
+		return l.Set("1")
+	}
+}
