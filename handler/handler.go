@@ -20,7 +20,6 @@ import (
 	"github.com/gorilla/context"
 	"github.com/simonz05/util/log"
 	"github.com/simonz05/util/session"
-	"github.com/tideland/goas/v2/monitoring"
 )
 
 // Creates a stack of HTTP handlers. Each HTTP handler is responsible for
@@ -60,9 +59,8 @@ func DebugHandle(h http.Handler) http.Handler {
 // MeasureHandler adds measuring to http requests
 func MeasureHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m := monitoring.BeginMeasuring(r.URL.Path)
+		log.Println("MeasureHandler is deprecated")
 		h.ServeHTTP(w, r)
-		m.EndMeasuring()
 	})
 }
 
