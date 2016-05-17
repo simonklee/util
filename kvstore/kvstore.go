@@ -65,7 +65,8 @@ func Open(dataSourceName string) (*KVStore, error) {
 	}
 
 	kvstore.Pool = &redis.Pool{
-		MaxIdle:     128,
+		MaxIdle:     64,
+		MaxActive:   64,
 		IdleTimeout: 60 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			return kvstore.dial()
