@@ -6,6 +6,7 @@
 package log
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -24,6 +25,37 @@ func init() {
 	filename = flag.String("log-file", "", "If non-empty, write log to this file")
 	ravenDSN = flag.String("log-raven-dsn", "", "If non-empty, write to raven dsn")
 	std = new(multiLogger)
+}
+
+func ConfigLogger(level string, filename string, ravenDSN string) error {
+	err := Severity.SetString(level)
+
+	if err != nil {
+		return err
+	}
+
+	ml, ok := std.(*multiLogger)
+
+	if !ok {
+		return errors.New("cannot configure")
+	}
+
+	// TODO
+	if len(ml.loggers) == 0 {
+		return errors.New("Cannot configure after log-usage")
+	}
+
+	ml.loggers = append(ml.loggers, &consoleLogger{sev: Severity})
+
+	if filename != "" {
+		ml.loggers = append(ml.loggers, &fileLogger{fname: filename, sev: Severity})
+	}
+
+	if ravenDSN != "" {
+		ml.loggers = append(ml.loggers, &ravenLogger{dsn: ravenDSN, sev: LevelError})
+	}
+
+	return nil
 }
 
 type logger interface {
