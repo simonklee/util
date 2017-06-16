@@ -41,7 +41,7 @@ func ConfigLogger(level string, filename string, ravenDSN string) error {
 	}
 
 	// TODO
-	if len(ml.loggers) == 0 {
+	if len(ml.loggers) > 0 {
 		return errors.New("Cannot configure after log-usage")
 	}
 
