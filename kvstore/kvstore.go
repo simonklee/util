@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/simonz05/util/log"
 )
 
 type KVStore struct {
@@ -96,7 +95,6 @@ func (kvstore *KVStore) dial() (redis.Conn, error) {
 
 	if kvstore.cfg.password != "" {
 		if _, err := conn.Do("AUTH", kvstore.cfg.password); err != nil {
-			log.Errorf("Redis AUTH err: %v", err)
 			conn.Close()
 			return nil, err
 		}
@@ -104,7 +102,6 @@ func (kvstore *KVStore) dial() (redis.Conn, error) {
 
 	if kvstore.cfg.db != 0 {
 		if _, err := conn.Do("SELECT", kvstore.cfg.db); err != nil {
-			log.Errorf("Redis SELECT err: %v", err)
 			conn.Close()
 			return nil, err
 		}
